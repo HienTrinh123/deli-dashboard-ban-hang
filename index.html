@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard quản trị bán hàng – Deli Việt Nam</title>
+<style>
+:root{--bg:#f4f6f9;--card:#fff;--text:#1d2533;--muted:#5f6b7a;--line:#e3e7ee;--accent:#1f4e9c;--accent2:#7fa3d9;--good:#2e7d4f;--bad:#b23b3b;--grey:#b8c0cc;--chip:#eef3fb;--shadow:0 1px 3px rgba(20,30,50,.08)}
+@media (prefers-color-scheme:dark){:root{--bg:#12161d;--card:#1b212b;--text:#e7ebf1;--muted:#9aa5b4;--line:#2c3441;--accent:#6c9be0;--accent2:#33507d;--grey:#4a5462;--chip:#243041;--shadow:none}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Segoe UI",Roboto,Arial,"Helvetica Neue",sans-serif;font-size:14px;line-height:1.45}
+.wrap{max-width:1280px;margin:0 auto;padding:20px 16px 40px}
+header h1{margin:0;font-size:22px;color:var(--accent)}
+header .sub{color:var(--muted);margin-top:4px}
+header .src{margin-top:8px;font-size:12.5px;color:var(--muted);background:var(--chip);border-radius:6px;padding:8px 10px}
+.filters{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:16px 0;box-shadow:var(--shadow);position:sticky;top:0;z-index:5}
+.filters label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:3px}
+.filters select,.filters input{font:inherit;font-size:13.5px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--text);min-width:130px}
+.btn{font:inherit;font-size:13px;padding:7px 12px;border-radius:6px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer}
+.btn:hover{background:var(--chip)}
+.active-f{flex-basis:100%;font-size:12.5px;color:var(--muted)}
+.warn{color:var(--bad);font-size:12.5px;flex-basis:100%;display:none}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;box-shadow:var(--shadow)}
+.kpi .lbl{font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
+.kpi .val{font-size:26px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}
+.kpi .full{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.kpi .formula{font-size:11.5px;color:var(--muted);margin-top:6px;border-top:1px dashed var(--line);padding-top:6px}
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:14px;align-items:start}
+.card h2{font-size:15px;margin:0 0 2px}
+.card .note{font-size:12px;color:var(--muted);margin-bottom:6px}
+svg{display:block;width:100%;height:auto}
+svg text{fill:var(--text);font-family:inherit}
+.empty{display:flex;align-items:center;justify-content:center;min-height:220px;color:var(--muted);font-style:italic;border:1px dashed var(--line);border-radius:8px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.tbl-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:10px;margin-bottom:8px}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{padding:7px 9px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{text-align:left;background:var(--chip);cursor:pointer;user-select:none;font-weight:600}
+th.num,td.num{text-align:right}
+th .arr{color:var(--muted);font-size:10px}
+tr.total td{font-weight:700;border-top:2px solid var(--text)}
+.bar-in{display:inline-block;height:8px;background:var(--accent2);border-radius:2px;vertical-align:middle;margin-left:6px}
+.notes{margin-top:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.notes ul{margin:6px 0 0;padding-left:18px;font-size:12.8px}
+.notes li{margin-bottom:4px}
+footer{margin-top:16px;font-size:12px;color:var(--muted)}
+@media (max-width:1000px){.kpis{grid-template-columns:repeat(2,1fr)}.grid,.notes{grid-template-columns:1fr}}
+@media (max-width:520px){.kpis{grid-template-columns:1fr}.filters select,.filters input{min-width:0;width:100%}.filters label{flex:1 1 45%}}
+@media print{.filters{position:static}.btn{display:none}}
+.topbar{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:flex-start}
+.refresh{display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:12.5px;color:var(--muted)}
+.btn.primary{background:var(--accent);color:#fff}
+.btn.primary:hover{opacity:.9;background:var(--accent)}
+.btn[disabled]{opacity:.6;cursor:wait}
+.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:var(--grey)}
+.status-dot.ok{background:var(--good)}.status-dot.err{background:var(--bad)}.status-dot.load{background:#d9a400}
+.banner{display:none;margin-top:12px;padding:10px 12px;border-radius:8px;font-size:13px}
+.banner.err{display:block;background:#fbebeb;color:#8a1f1f;border:1px solid #f0c4c4}
+.banner.warn{display:block;background:#fff6e0;color:#6b4e00;border:1px solid #f0dca0}
+.loading{opacity:.45;pointer-events:none;transition:opacity .2s}
+.dq{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:8px}
+.dq div{background:var(--chip);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--muted)}
+.dq b{display:block;font-size:17px;color:var(--text);font-variant-numeric:tabular-nums}
+@media (max-width:1000px){.dq{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="topbar">
+    <div>
+      <h1>Dashboard quản trị bán hàng – Deli Việt Nam</h1>
+      <div class="sub">Kỳ dữ liệu: <b id="period">–</b> · Đơn vị tiền tệ: <b>VND</b></div>
+    </div>
+    <div class="refresh">
+      <button class="btn primary" id="btnRefresh" type="button">⟳ Làm mới dữ liệu</button>
+      <span><span class="status-dot load" id="dot"></span><span id="lastFetch">Đang tải dữ liệu…</span></span>
+    </div>
+  </div>
+  <div class="src"><b>Nguồn dữ liệu:</b> Google Sheet <i>Demo9</i>, tab <i>Du_lieu_sach</i> (dữ liệu đã làm sạch; <b>bộ dữ liệu giả lập phục vụ đào tạo</b>). Dữ liệu được đọc trực tiếp <b>mỗi khi mở trang hoặc bấm "Làm mới dữ liệu"</b>. Chỉ tính đơn có cột "Hợp lệ tính KQKD" = Có <i>và</i> đạt kiểm tra tự động (trạng thái Hoàn thành, đủ dữ liệu, doanh thu khớp công thức, không trùng mã đơn). Trang không hiển thị mã khách hàng, mã nhân viên.</div>
+  <div class="banner" id="banner"></div>
+</header>
+
+<section class="filters" aria-label="Bộ lọc">
+  <label>Thời gian <select id="fPeriod"></select></label>
+  <label>Từ ngày <input type="date" id="fFrom"></label>
+  <label>Đến ngày <input type="date" id="fTo"></label>
+  <label>Khu vực <select id="fRegion"></select></label>
+  <label>Phòng kinh doanh <select id="fDept"></select></label>
+  <label>Nhóm sản phẩm <select id="fGroup"></select></label>
+  <button class="btn" id="btnReset" type="button">Xóa bộ lọc</button>
+  <div class="warn" id="dateWarn">"Từ ngày" lớn hơn "Đến ngày" – không có đơn nào thỏa điều kiện.</div>
+  <div class="active-f" id="activeF"></div>
+</section>
+
+<main id="main" class="loading">
+<section class="kpis">
+  <div class="card kpi"><div class="lbl">Tổng doanh thu hợp lệ</div><div class="val" id="kRev">–</div><div class="full" id="kRevFull"></div><div class="formula">Σ Doanh thu = Σ Đơn giá × Số lượng × (1 − Chiết khấu)</div></div>
+  <div class="card kpi"><div class="lbl">Lợi nhuận gộp</div><div class="val" id="kGp">–</div><div class="full" id="kGpFull"></div><div class="formula">Doanh thu − Giá vốn</div></div>
+  <div class="card kpi"><div class="lbl">Biên lợi nhuận gộp</div><div class="val" id="kMg">–</div><div class="full" id="kMgFull"></div><div class="formula">Lợi nhuận gộp ÷ Doanh thu</div></div>
+  <div class="card kpi"><div class="lbl">Số đơn hoàn thành</div><div class="val" id="kOrd">–</div><div class="full" id="kOrdFull"></div><div class="formula">Đếm đơn hợp lệ (mỗi dòng = 1 mã đơn)</div></div>
+</section>
+
+<section class="grid">
+  <div class="card"><h2>Doanh thu và lợi nhuận gộp theo tháng</h2><div class="note">Đơn vị: triệu VND</div><div id="chMonth"></div>
+    <div class="legend"><span><i style="background:var(--accent)"></i>Doanh thu</span><span><i style="background:var(--grey)"></i>Lợi nhuận gộp</span></div></div>
+  <div class="card"><h2>So sánh theo phòng kinh doanh</h2><div class="note">Doanh thu (triệu VND) · biên LN gộp ở cuối thanh</div><div id="chDept"></div></div>
+  <div class="card"><h2>Cơ cấu doanh thu theo nhóm sản phẩm</h2><div class="note">% trên doanh thu hợp lệ đang lọc</div><div id="chGroup"></div><div class="legend" id="lgGroup"></div></div>
+</section>
+
+<section class="card" style="margin-top:14px">
+  <div class="tbl-head">
+    <div><h2>Bảng chi tiết tra cứu</h2><div class="note">Cùng bộ lọc với KPI và biểu đồ. Bấm tiêu đề cột để sắp xếp. Dòng "Tổng cộng" luôn bằng các thẻ KPI.</div></div>
+    <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+      <label style="font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:3px">Xem theo
+        <select id="fDim" style="font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--text)">
+          <option value="month">Tháng</option><option value="region">Khu vực</option><option value="dept">Phòng kinh doanh</option><option value="group">Nhóm sản phẩm</option><option value="product">Sản phẩm</option><option value="monthRegion">Tháng × Khu vực</option><option value="regionDept">Khu vực × Phòng kinh doanh</option>
+        </select></label>
+      <button class="btn" id="btnCsv" type="button">Tải CSV</button>
+    </div>
+  </div>
+  <div class="tbl-wrap"><table id="tbl"><thead></thead><tbody></tbody></table></div>
+</section>
+
+<section class="card" style="margin-top:14px">
+  <h2>Chất lượng dữ liệu của lần tải này</h2>
+  <div class="note">Tính trên toàn bộ tab Du_lieu_sach, không phụ thuộc bộ lọc.</div>
+  <div class="dq" id="dq"></div>
+</section>
+
+<section class="notes">
+  <div class="card"><h2>Quy tắc loại trừ đơn hàng</h2><ul id="nRules"></ul></div>
+  <div class="card"><h2>Dữ liệu thiếu / chờ xác minh</h2><ul id="nMissing"></ul></div>
+  <div class="card"><h2>Giới hạn phân tích</h2><ul>
+    <li>Dữ liệu giả lập phục vụ đào tạo; không có kỳ trước, chỉ tiêu kế hoạch, chi phí bán hàng → không đánh giá % hoàn thành kế hoạch, xu hướng dài hạn hay lợi nhuận thuần.</li>
+    <li>"Phòng kinh doanh" đang trùng với "Nhóm sản phẩm" (cần xác minh); hai bộ lọc này có thể cho kết quả giống nhau.</li>
+    <li>So sánh giữa các nhóm là mô tả/tương quan, không phải quan hệ nhân quả. Nhóm có ít đơn dễ biến động mạnh.</li>
+  </ul></div>
+</section>
+</main>
+<footer>HTML/CSS/JavaScript thuần, không dùng thư viện ngoài. Dữ liệu lấy qua <code>/api/data</code> (hàm Vercel đọc Google Sheet, không lưu cache).</footer>
+</div>
+<script>
+(function(){
+'use strict';
+let ROWS=[],ALL=[],GRAND=0,TOT,R=[],D=[],G=[],MONTHS={},BOUNDS={},GRANK=[];
+const fmtInt=new Intl.NumberFormat('vi-VN',{maximumFractionDigits:0});
+const fmt1=new Intl.NumberFormat('vi-VN',{minimumFractionDigits:1,maximumFractionDigits:1});
+const vnd=v=>fmtInt.format(Math.round(v))+' VND';
+const mil=v=>fmt1.format(v/1e6);
+const pct=v=>isFinite(v)?fmt1.format(v*100)+'%':'–';
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const $=id=>document.getElementById(id);
+const dmy=s=>s?s.split('-').reverse().join('/'):'';
+const GCOL=['var(--accent)','#5b8bd0','#9db8e3','#c9d7ee','#7d8fb0','#aab6cc'];
+const REG_ORDER=['Miền Bắc','Miền Trung','Miền Nam'];
+let sortKey='rev',sortDir=-1;
+function filtered(){
+  const f=$('fFrom').value||BOUNDS.all[0],t=$('fTo').value||BOUNDS.all[1],rg=$('fRegion').value,dp=$('fDept').value,gr=$('fGroup').value;
+  $('dateWarn').style.display=f>t?'block':'none';
+  return ROWS.filter(r=>r.date&&r.date>=f&&r.date<=t&&(!rg||r.region===rg)&&(!dp||r.dept===dp)&&(!gr||r.group===gr));
+}
+function agg(rows,keyFn){
+  const m=new Map();
+  rows.forEach(r=>{const k=keyFn(r);let a=m.get(k);if(!a){a={key:k,n:0,qty:0,rev:0,cost:0};m.set(k,a);}a.n++;a.qty+=r.qty;a.rev+=r.rev;a.cost+=r.cost;});
+  return [...m.values()].map(a=>(a.gp=a.rev-a.cost,a.mg=a.rev?a.gp/a.rev:NaN,a));
+}
+function total(rows){const a=agg(rows,()=> 'all');return a[0]||{n:0,qty:0,rev:0,cost:0,gp:0,mg:NaN};}
+
+function renderKpi(rows){
+  const t=total(rows),has=t.n>0;
+  $('kRev').textContent=has?mil(t.rev)+' tr':'–';
+  $('kRevFull').textContent=has?vnd(t.rev)+' · '+pct(t.rev/GRAND)+' tổng kỳ':'Không có dữ liệu';
+  $('kGp').textContent=has?mil(t.gp)+' tr':'–';
+  $('kGpFull').textContent=has?vnd(t.gp)+' · giá vốn '+vnd(t.cost):'Không có dữ liệu';
+  $('kMg').textContent=has?pct(t.mg):'–';
+  $('kMgFull').textContent=has?'Bình quân toàn kỳ: '+pct(TOT.mg):'Không có dữ liệu';
+  $('kOrd').textContent=has?fmtInt.format(t.n):'0';
+  $('kOrdFull').textContent=has?'Giá trị BQ/đơn: '+vnd(t.rev/t.n):'Không có đơn thỏa bộ lọc';
+  return t;
+}
+const EMPTY='<div class="empty">Không có dữ liệu cho bộ lọc đã chọn</div>';
+function renderMonth(rows){
+  const el=$('chMonth');if(!rows.length){el.innerHTML=EMPTY;return;}
+  const a=agg(rows,r=>r.ym).sort((x,y)=>x.key<y.key?-1:1);
+  const W=420,H=250,x0=38,y0=24,yb=208,max=Math.max(...a.map(d=>d.rev))*1.12;
+  const bw=(W-x0-10)/a.length,y=v=>yb-v/max*(yb-y0);
+  let s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Doanh thu và lợi nhuận gộp theo tháng">';
+  for(let i=0;i<=4;i++){const v=max*i/4,yy=y(v);s+='<line x1="'+x0+'" x2="'+(W-6)+'" y1="'+yy+'" y2="'+yy+'" stroke="var(--line)"/><text x="'+(x0-6)+'" y="'+(yy+4)+'" text-anchor="end" font-size="11" style="fill:var(--muted)">'+fmtInt.format(v/1e6)+'</text>';}
+  a.forEach((d,i)=>{const cx=x0+bw*i+bw/2,w=Math.min(46,bw/3);
+    s+='<rect x="'+(cx-w-2)+'" y="'+y(d.rev)+'" width="'+w+'" height="'+(yb-y(d.rev))+'" fill="var(--accent)" rx="2"><title>'+MONTHS[d.key]+': doanh thu '+vnd(d.rev)+'</title></rect>';
+    s+='<rect x="'+(cx+2)+'" y="'+y(d.gp)+'" width="'+w+'" height="'+(yb-y(d.gp))+'" fill="var(--grey)" rx="2"><title>'+MONTHS[d.key]+': LN gộp '+vnd(d.gp)+' (biên '+pct(d.mg)+')</title></rect>';
+    s+='<text x="'+(cx-w/2-2)+'" y="'+(y(d.rev)-5)+'" text-anchor="middle" font-size="11.5" font-weight="600">'+mil(d.rev)+'</text>';
+    s+='<text x="'+(cx+w/2+2)+'" y="'+(y(d.gp)-5)+'" text-anchor="middle" font-size="11" style="fill:var(--muted)">'+mil(d.gp)+'</text>';
+    s+='<text x="'+cx+'" y="'+(yb+17)+'" text-anchor="middle" font-size="12">'+MONTHS[d.key]+'</text>';
+    s+='<text x="'+cx+'" y="'+(yb+32)+'" text-anchor="middle" font-size="11.5" style="fill:var(--muted)">'+d.n+' đơn · biên '+pct(d.mg)+'</text>';});
+  s+='<line x1="'+x0+'" x2="'+(W-6)+'" y1="'+yb+'" y2="'+yb+'" stroke="var(--muted)"/></svg>';el.innerHTML=s;
+}
+function renderDept(rows){
+  const el=$('chDept');if(!rows.length){el.innerHTML=EMPTY;return;}
+  const a=agg(rows,r=>r.dept).sort((x,y)=>y.rev-x.rev);
+  const W=440,rh=50,H=a.length*rh+14,x0=132,xmax=W-112,max=Math.max(...a.map(d=>d.rev));
+  let s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Doanh thu theo phòng kinh doanh">';
+  a.forEach((d,i)=>{const yy=10+i*rh,w=Math.max(2,d.rev/max*(xmax-x0)),gw=Math.max(1,d.gp/max*(xmax-x0));
+    s+='<text x="'+(x0-8)+'" y="'+(yy+16)+'" text-anchor="end" font-size="12">'+esc(d.key)+'</text>';
+    s+='<text x="'+(x0-8)+'" y="'+(yy+31)+'" text-anchor="end" font-size="11" style="fill:var(--muted)">'+d.n+' đơn</text>';
+    s+='<rect x="'+x0+'" y="'+(yy+4)+'" width="'+w+'" height="18" fill="'+(i===0?'var(--accent)':'var(--accent2)')+'" rx="2"><title>'+esc(d.key)+': doanh thu '+vnd(d.rev)+'</title></rect>';
+    s+='<rect x="'+x0+'" y="'+(yy+25)+'" width="'+gw+'" height="8" fill="var(--grey)" rx="2"><title>'+esc(d.key)+': LN gộp '+vnd(d.gp)+'</title></rect>';
+    s+='<text x="'+(x0+w+6)+'" y="'+(yy+18)+'" font-size="12" font-weight="600">'+mil(d.rev)+'</text>';
+    s+='<text x="'+(x0+Math.max(w,gw)+6)+'" y="'+(yy+33)+'" font-size="11" style="fill:var(--muted)">LN '+mil(d.gp)+' · biên '+pct(d.mg)+'</text>';});
+  s+='</svg>';el.innerHTML=s+'<div class="legend"><span><i style="background:var(--accent2)"></i>Doanh thu</span><span><i style="background:var(--grey)"></i>Lợi nhuận gộp</span></div>';
+}
+function renderGroup(rows){
+  const el=$('chGroup'),lg=$('lgGroup');if(!rows.length){el.innerHTML=EMPTY;lg.innerHTML='';return;}
+  const a=agg(rows,r=>r.group).sort((x,y)=>y.rev-x.rev),tot=a.reduce((s,d)=>s+d.rev,0);
+  const cx=130,cy=120,ro=100,ri=60;let ang=-Math.PI/2,s='<svg viewBox="0 0 260 240" style="max-width:300px;margin:0 auto" role="img" aria-label="Cơ cấu doanh thu theo nhóm sản phẩm">';
+  a.forEach(d=>{const col=GCOL[GRANK.indexOf(d.key)%GCOL.length],fr=d.rev/tot;
+    if(fr>=0.9999){s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+(ro+ri)/2+'" fill="none" stroke="'+col+'" stroke-width="'+(ro-ri)+'"><title>'+esc(d.key)+': '+vnd(d.rev)+' (100%)</title></circle>';return;}
+    const a2=ang+fr*2*Math.PI,lg2=fr>.5?1:0,p=(r,t)=>(cx+r*Math.cos(t)).toFixed(2)+' '+(cy+r*Math.sin(t)).toFixed(2);
+    s+='<path d="M'+p(ro,ang)+' A'+ro+' '+ro+' 0 '+lg2+' 1 '+p(ro,a2)+' L'+p(ri,a2)+' A'+ri+' '+ri+' 0 '+lg2+' 0 '+p(ri,ang)+' Z" fill="'+col+'" stroke="var(--card)" stroke-width="1.5"><title>'+esc(d.key)+': '+vnd(d.rev)+' ('+pct(fr)+')</title></path>';ang=a2;});
+  s+='<text x="'+cx+'" y="'+(cy-4)+'" text-anchor="middle" font-size="16" font-weight="700">'+mil(tot)+'</text><text x="'+cx+'" y="'+(cy+14)+'" text-anchor="middle" font-size="11" style="fill:var(--muted)">triệu VND</text></svg>';
+  el.innerHTML=s;
+  lg.innerHTML=a.map(d=>'<span><i style="background:'+GCOL[GRANK.indexOf(d.key)%GCOL.length]+'"></i>'+esc(d.key)+': <b>'+pct(d.rev/tot)+'</b> ('+mil(d.rev)+' tr)</span>').join('');
+}
+const DIMS={month:r=>MONTHS[r.ym],region:r=>r.region,dept:r=>r.dept,group:r=>r.group,product:r=>r.product,monthRegion:r=>MONTHS[r.ym]+' · '+r.region,regionDept:r=>r.region+' · '+r.dept};
+const ORDER={month:k=>k,region:k=>R.indexOf(k),monthRegion:k=>k};
+const COLS=[['key','Nhóm',0],['n','Số đơn',1],['qty','Số lượng',1],['rev','Doanh thu (VND)',1],['cost','Giá vốn (VND)',1],['gp','LN gộp (VND)',1],['mg','Biên LN gộp',1],['share','Tỷ trọng DT',1]];
+let lastTable=[];
+function renderTable(rows,t){
+  const dim=$('fDim').value,thead=$('tbl').tHead,tb=$('tbl').tBodies[0];
+  thead.innerHTML='<tr>'+COLS.map(c=>'<th class="'+(c[2]?'num':'')+'" data-k="'+c[0]+'">'+c[1]+' <span class="arr">'+(sortKey===c[0]?(sortDir>0?'▲':'▼'):'')+'</span></th>').join('')+'</tr>';
+  if(!rows.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--muted);font-style:italic;padding:24px">Không có dữ liệu cho bộ lọc đã chọn</td></tr>';lastTable=[];return;}
+  const a=agg(rows,DIMS[dim]).map(d=>(d.share=d.rev/t.rev,d));
+  a.sort((x,y)=>{let u=x[sortKey],v=y[sortKey];if(sortKey==='key'){return sortDir*String(u).localeCompare(String(v),'vi',{numeric:true});}return sortDir*((u||0)-(v||0));});
+  const mx=Math.max(...a.map(d=>d.share));
+  const row=(d,cls)=>'<tr class="'+(cls||'')+'"><td>'+esc(d.key)+'</td><td class="num">'+fmtInt.format(d.n)+'</td><td class="num">'+fmtInt.format(d.qty)+'</td><td class="num">'+fmtInt.format(d.rev)+'</td><td class="num">'+fmtInt.format(d.cost)+'</td><td class="num">'+fmtInt.format(d.gp)+'</td><td class="num">'+pct(d.mg)+'</td><td class="num">'+pct(d.share)+(cls?'':'<span class="bar-in" style="width:'+(d.share/mx*50).toFixed(1)+'px"></span>')+'</td></tr>';
+  tb.innerHTML=a.map(d=>row(d)).join('')+row(Object.assign({},t,{key:'Tổng cộng',share:1}),'total');
+  lastTable=a.concat([Object.assign({},t,{key:'Tổng cộng',share:1})]);
+}
+function activeText(){
+  const p=[];const f=$('fFrom').value,t=$('fTo').value;
+  p.push('Thời gian: '+f.split('-').reverse().join('/')+' – '+t.split('-').reverse().join('/'));
+  [['fRegion','Khu vực'],['fDept','Phòng'],['fGroup','Nhóm']].forEach(([id,l])=>{if($(id).value)p.push(l+': '+$(id).value);});
+  return 'Đang lọc → '+p.join(' · ');
+}
+
+function fillSel(sel,arr,all){const cur=sel.value;sel.innerHTML='<option value="">'+all+'</option>'+arr.map(v=>'<option>'+esc(v)+'</option>').join('');if(arr.includes(cur))sel.value=cur;}
+function setupFromData(){
+  ROWS=ALL.filter(r=>r.valid);
+  GRAND=ROWS.reduce((s,r)=>s+r.rev,0);TOT=total(ROWS);
+  R=[...new Set(ROWS.map(r=>r.region))].sort((a,b)=>(REG_ORDER.indexOf(a)+1||99)-(REG_ORDER.indexOf(b)+1||99));
+  D=[...new Set(ROWS.map(r=>r.dept))].sort();G=[...new Set(ROWS.map(r=>r.group))].sort();
+  GRANK.length=0;agg(ROWS,r=>r.group).sort((x,y)=>y.rev-x.rev).forEach(d=>GRANK.push(d.key));
+  const dates=ALL.filter(r=>r.date).map(r=>r.date).sort();const min=dates[0]||'',max=dates[dates.length-1]||'';
+  const months=[...new Set(ROWS.map(r=>r.ym))].sort();MONTHS={};BOUNDS={all:[min,max]};
+  months.forEach(ym=>{const [y,m]=ym.split('-');MONTHS[ym]='Tháng '+(+m)+'/'+y;const last=new Date(+y,+m,0).getDate();BOUNDS[ym]=[ym+'-01',ym+'-'+String(last).padStart(2,'0')];});
+  const ps=$('fPeriod'),cur=ps.value;
+  ps.innerHTML='<option value="all">Toàn kỳ dữ liệu</option>'+months.map(k=>'<option value="'+k+'">'+MONTHS[k]+'</option>').join('')+'<option value="custom">Tùy chọn ngày</option>';
+  ['fFrom','fTo'].forEach(id=>{$(id).min=min;$(id).max=max;});
+  if(!$('fFrom').value||!$('fFrom').dataset.touched){$('fFrom').value=min;$('fTo').value=max;ps.value='all';}
+  else ps.value=[...ps.options].some(o=>o.value===cur)?cur:'custom';
+  $('period').textContent=min?dmy(min)+' – '+dmy(max):'–';
+  fillSel($('fRegion'),R,'Tất cả khu vực');fillSel($('fDept'),D,'Tất cả phòng');fillSel($('fGroup'),G,'Tất cả nhóm');
+}
+function renderQuality(meta){
+  const by=s=>ALL.filter(r=>r.status===s);const sum=a=>a.reduce((x,r)=>x+(r.rev||0),0);
+  const proc=by('Đang xử lý'),canc=by('Đã hủy');
+  const pend=ALL.filter(r=>!r.valid&&(r.status==='Hoàn thành'||!['Đang xử lý','Đã hủy'].includes(r.status)));
+  $('dq').innerHTML=[['Tổng dòng đọc được',ALL.length],['Đơn hợp lệ tính KPI',ROWS.length],['Đang xử lý (không tính)',proc.length],['Đã hủy (không tính)',canc.length],['Chờ xác minh (không tính)',pend.length]].map(x=>'<div>'+x[0]+'<b>'+fmtInt.format(x[1])+'</b></div>').join('');
+  $('nRules').innerHTML=['Chỉ tính đơn có trạng thái <b>"Hoàn thành"</b> (nhãn "Hoàn tất" được chuẩn hóa thành "Hoàn thành") và cột "Hợp lệ tính KQKD" = Có.',
+    'Đơn phải đủ ngày, số lượng, đơn giá, chiết khấu, doanh thu, giá vốn; doanh thu lệch công thức ≤ 1 VND; mã đơn không trùng.',
+    'Không tính: '+proc.length+' đơn "Đang xử lý" ('+vnd(sum(proc))+'), '+canc.length+' đơn "Đã hủy" ('+vnd(sum(canc))+').',
+    'Đối chiếu: '+ALL.length+' dòng = '+ROWS.length+' hợp lệ + '+pend.length+' chờ xác minh + '+proc.length+' đang xử lý + '+canc.length+' đã hủy.'].map(x=>'<li>'+x+'</li>').join('');
+  const flagged=ALL.filter(r=>r.flag||(r.problems&&r.problems.length)||!['Hoàn thành','Đang xử lý','Đã hủy'].includes(r.status));
+  $('nMissing').innerHTML=(pend.length?'<li>'+pend.length+' đơn chưa tính KPI ('+vnd(sum(pend))+').</li>':'')+
+    (flagged.length?flagged.map(r=>'<li><b>'+esc(r.order)+'</b>: '+esc([r.flag,(r.problems||[]).join('; '),r.status==='Chưa xác định'?'trạng thái chưa xác định':''].filter(Boolean).join(' · '))+' → '+(r.valid?'vẫn tính KPI':'không tính KPI')+'</li>').join(''):'<li>Không có dòng nào bị gắn cờ.</li>')+'<li>Không tự điền giá trị thiếu.</li>';
+  const ban=$('banner');
+  if(meta.issues&&meta.issues.length){ban.className='banner warn';ban.innerHTML='<b>Cảnh báo:</b> '+meta.issues.length+' dòng có cột "Hợp lệ tính KQKD" khác với kiểm tra tự động – các dòng này <b>không</b> được tính KPI cho đến khi được rà soát: '+meta.issues.slice(0,8).map(i=>esc(i.order)+' (dòng '+i.line+', sheet: '+i.sheet+', kiểm tra: '+esc(i.reason)+')').join('; ')+(meta.issues.length>8?'…':'');}
+  else if(!ROWS.length){ban.className='banner warn';ban.textContent='Sheet không có đơn hợp lệ nào để tính KPI.';}
+  else {ban.className='banner';ban.textContent='';}
+}
+function update(){
+  if(!ALL.length)return;
+  const rows=filtered();const t=renderKpi(rows);renderMonth(rows);renderDept(rows);renderGroup(rows);renderTable(rows,t);
+  $('activeF').textContent=activeText()+' · '+rows.length+' đơn';
+  window.__dash={rows:rows.length,rev:t.rev,gp:t.gp,cost:t.cost,table:lastTable,all:ALL.length,valid:ROWS.length};
+}
+let loading=false;
+async function load(){
+  if(loading)return;loading=true;
+  const btn=$('btnRefresh');btn.disabled=true;btn.textContent='Đang tải…';$('dot').className='status-dot load';$('main').classList.add('loading');
+  try{
+    const res=await fetch('/api/data?t='+Date.now(),{cache:'no-store'});
+    const j=await res.json().catch(()=>({ok:false,error:'Phản hồi không hợp lệ (HTTP '+res.status+')'}));
+    if(!j.ok)throw new Error(j.error||('HTTP '+res.status));
+    ALL=j.rows.map(r=>({line:r.l,date:r.d,ym:r.d?r.d.slice(0,7):'',order:r.o,dept:r.dp,region:r.r,group:r.g,product:r.p,qty:r.q||0,price:r.pr,disc:r.ck,rev:r.rv||0,cost:r.c||0,status:r.s,valid:!!r.v,flag:r.f,problems:r.pb}));
+    setupFromData();renderQuality(j);update();
+    $('dot').className='status-dot ok';
+    $('lastFetch').textContent='Cập nhật lúc '+new Date(j.fetchedAt).toLocaleString('vi-VN')+' · '+j.total+' dòng';
+    $('main').classList.remove('loading');
+  }catch(e){
+    $('dot').className='status-dot err';$('lastFetch').textContent='Tải dữ liệu thất bại';
+    const b=$('banner');b.className='banner err';b.innerHTML='<b>Không tải được dữ liệu từ Google Sheet.</b> '+esc(e.message)+(ALL.length?' – đang hiển thị dữ liệu của lần tải trước.':'');
+    if(ALL.length)$('main').classList.remove('loading');
+  }finally{loading=false;btn.disabled=false;btn.textContent='⟳ Làm mới dữ liệu';}
+}
+$('fPeriod').addEventListener('change',e=>{const v=e.target.value;if(v!=='custom'&&BOUNDS[v]){$('fFrom').value=BOUNDS[v][0];$('fTo').value=BOUNDS[v][1];}$('fFrom').dataset.touched=v==='all'?'':'1';update();});
+['fFrom','fTo'].forEach(id=>$(id).addEventListener('change',()=>{const f=$('fFrom').value,t=$('fTo').value;const m=Object.keys(BOUNDS).find(k=>BOUNDS[k][0]===f&&BOUNDS[k][1]===t);$('fPeriod').value=m||'custom';$('fFrom').dataset.touched=m==='all'?'':'1';update();}));
+['fRegion','fDept','fGroup','fDim'].forEach(id=>$(id).addEventListener('change',update));
+$('btnReset').addEventListener('click',()=>{$('fPeriod').value='all';$('fFrom').value=BOUNDS.all[0];$('fTo').value=BOUNDS.all[1];$('fFrom').dataset.touched='';['fRegion','fDept','fGroup'].forEach(id=>$(id).value='');update();});
+$('tbl').tHead.addEventListener('click',e=>{const th=e.target.closest('th');if(!th)return;const k=th.dataset.k;if(sortKey===k)sortDir=-sortDir;else{sortKey=k;sortDir=k==='key'?1:-1;}update();});
+$('btnCsv').addEventListener('click',()=>{
+  const lines=[COLS.map(c=>c[1]).join(';')].concat(lastTable.map(d=>[d.key,d.n,d.qty,d.rev,d.cost,d.gp,isFinite(d.mg)?(d.mg*100).toFixed(2):'',(d.share*100).toFixed(2)].join(';')));
+  const blob=new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Deli_bang_chi_tiet.csv';document.body.appendChild(a);a.click();a.remove();
+});
+$('btnRefresh').addEventListener('click',load);
+load();
+})();
+</script>
+</body>
+</html>
